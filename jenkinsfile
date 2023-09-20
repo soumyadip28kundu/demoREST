@@ -1,0 +1,29 @@
+pipeline {
+    agent any
+    tools{
+        maven 'maven_3_6_3'
+    }
+    stages{
+        stage("Build Maven"){
+            steps{
+                checkout scmGit(branches: [[name: '*/DevelopmentBranch']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/soumyadip28kundu/demoREST']])
+                sh 'mvn clean install'
+            }
+        }
+        stage('Build Docker image'){
+            steps{
+                sh 'whoami'
+                sh 'docker build -t soumyadip28kundu/demorestspringboot-v1 .'
+            }
+        }
+        stage("Deploy to Kubernetes"){
+            steps{
+                kubeconfig(caCertificate: '', credentialsId: 'kubeconfig', serverUrl: '') {
+                    sh 'kubectl apply -f ./servicemesh/deployment.yaml'
+                    sh 'kubectl apply -f ./servicemesh/service.yaml'
+                }
+            }
+        }
+        
+    }
+}
